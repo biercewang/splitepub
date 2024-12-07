@@ -13,9 +13,10 @@ def extract_epub_chapters(epub_file_path, output_directory):
         output_directory (str): 保存TXT文件的目录。
 
     返回:
-        list: 包含生成的TXT文件路径的列表。
+        tuple: (章节文件列表, 完整文本内容)
     """
     extracted_files = []
+    full_content = []
     
     # 解压EPUB文件
     with zipfile.ZipFile(epub_file_path, 'r') as epub_zip:
@@ -39,9 +40,9 @@ def extract_epub_chapters(epub_file_path, output_directory):
                         txt_file.write(text_content)
                     
                     extracted_files.append(txt_file_path)
+                    full_content.append(text_content)
     
-    return extracted_files
-
+    return extracted_files, "\n\n".join(full_content)
 
 # 示例使用
 if __name__ == "__main__":
@@ -50,10 +51,22 @@ if __name__ == "__main__":
     root.withdraw()  # 隐藏主窗口
     epub_file = filedialog.askopenfilename(title="选择一个EPUB文件", filetypes=[("EPUB files", "*.epub")])
     
-    # 输出目录默认保存在桌面
-    output_dir = os.path.join(os.path.expanduser("~"), "Desktop", "output_directory/")
+    if not epub_file:  # 如果用户取消选择
+        print("未选择文件")
+        exit()
+    
+    # 将输出目录设置为输入文件所在的目录
+    output_dir = os.path.join(os.path.dirname(epub_file), "epub_output")
     os.makedirs(output_dir, exist_ok=True)
     
     # 提取章节
-    chapter_files = extract_epub_chapters(epub_file, output_dir)
+    chapter_files, full_text = extract_epub_chapters(epub_file, output_dir)
+    
+    # 保存完整书籍内容
+    book_name = os.path.splitext(os.path.basename(epub_file))[0]
+    full_book_path = os.path.join(output_dir, f"{book_name}_完整版.txt")
+    with open(full_book_path, 'w', encoding='utf-8') as f:
+        f.write(full_text)
+    
     print(f"章节已保存为以下TXT文件：\n{chapter_files}")
+    print(f"\n完整版已保存为：\n{full_book_path}")
